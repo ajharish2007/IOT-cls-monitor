@@ -1,5 +1,5 @@
 # 🏠 IoT Home Automation System using ESP32 and Firebase
-live data :https://github.com/ajharish2007/IOT-cls-monitor
+live data :https://ajharish2007.github.io/IOT-cls-monitor/
 
 ## 📌 Project Overview
 
