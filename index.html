@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Classroom Automation</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #eef2f7;
+            color: #172033;
+        }
+
+        header {
+            background: #123b65;
+            color: white;
+            text-align: center;
+            padding: 24px 12px;
+        }
+
+        header h1 {
+            margin: 0 0 8px;
+        }
+
+        main {
+            max-width: 850px;
+            margin: 35px auto;
+            padding: 16px;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px #00000012;
+            text-align: center;
+        }
+
+        .number {
+            font-size: 56px;
+            font-weight: bold;
+            color: #1769aa;
+            margin: 18px 0;
+        }
+
+        .fan {
+            font-size: 25px;
+            font-weight: bold;
+            margin: 25px 0;
+        }
+
+        .on {
+            color: #138443;
+        }
+
+        .off {
+            color: #c0392b;
+        }
+
+        #connection {
+            text-align: center;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        .note {
+            font-size: 13px;
+            color: #657187;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Smart Classroom</h1>
+        <p>IoT Student Counting &amp; Fan Automation</p>
+    </header>
+
+    <main>
+        <p id="connection">Connecting to Firebase...</p>
+
+        <div class="dashboard">
+            <section class="card">
+                <h2>Students in Class</h2>
+                <div class="number" id="students">--</div>
+                <p class="note">
+                    Live student count received from ESP32.
+                </p>
+            </section>
+
+            <section class="card">
+                <h2>Fan Status</h2>
+                <div class="fan off" id="fan">OFF</div>
+                <p id="fanMessage">Waiting for classroom data...</p>
+            </section>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from
+            "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
+
+        import {
+            getDatabase,
+            ref,
+            onValue
+        } from
+            "https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA4mu2hJVXSw3oVgmBIYBDvzclA7zEeprk",
+            authDomain: "iot-project-cp.firebaseapp.com",
+            projectId: "iot-project-cp",
+            storageBucket: "iot-project-cp.firebasestorage.app",
+            messagingSenderId: "666695049345",
+            appId: "1:666695049345:web:b892966c4dbd2ea77bed80",
+            measurementId: "G-0VBXX58HHQ"
+        };
+
+        // Replace this with your exact Firebase Realtime Database URL.
+        const DATABASE_URL =
+            "https://iot-project-cp-default-rtdb.asia-southeast1.firebasedatabase.app";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app, DATABASE_URL);
+
+        const studentsRef = ref(db, "classroom/students");
+        const connectionRef = ref(db, ".info/connected");
+
+        const studentsElement =
+            document.getElementById("students");
+        const fanElement =
+            document.getElementById("fan");
+        const fanMessage =
+            document.getElementById("fanMessage");
+        const connectionElement =
+            document.getElementById("connection");
+
+        function renderDashboard(count) {
+            const students = Number(count);
+
+            if (!Number.isFinite(students) || students < 0) {
+                connectionElement.textContent =
+                    "Invalid student count in database.";
+                connectionElement.style.color = "#c0392b";
+                return;
+            }
+
+            studentsElement.textContent = students;
+
+            if (students > 0) {
+                fanElement.textContent = "ON";
+                fanElement.className = "fan on";
+                fanMessage.textContent =
+                    "Classroom occupied - fan should be ON";
+            } else {
+                fanElement.textContent = "OFF";
+                fanElement.className = "fan off";
+                fanMessage.textContent =
+                    "Classroom empty - fan should be OFF";
+            }
+        }
+
+        onValue(
+            connectionRef,
+            (snapshot) => {
+                const connected = snapshot.val() === true;
+
+                connectionElement.textContent = connected
+                    ? "Connected to Firebase"
+                    : "Disconnected from Firebase";
+
+                connectionElement.style.color = connected
+                    ? "#138443"
+                    : "#c0392b";
+            },
+            (error) => {
+                connectionElement.textContent =
+                    "Connection error: " + error.message;
+                connectionElement.style.color = "#c0392b";
+            }
+        );
+
+        onValue(
+            studentsRef,
+            (snapshot) => {
+                const value = snapshot.val();
+
+                renderDashboard(value ?? 0);
+            },
+            (error) => {
+                connectionElement.textContent =
+                    "Database read failed: " + error.message;
+                connectionElement.style.color = "#c0392b";
+            }
+        );
+    </script>
+</body>
+</html>
